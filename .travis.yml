@@ -1,0 +1,12 @@
+# make sure we're on a php machine (because of dependencies)
+language: php
+
+# no installation...
+before_script: "./buildconf --force; echo s > s"
+script: "./configure && make all > /dev/null && make test < s"
+
+branches:
+  only:
+    - master
+    - PHP-5.3
+    - PHP-5.4
