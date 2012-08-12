@@ -1152,40 +1152,6 @@ static int ZEND_FASTCALL  ZEND_USER_OPCODE_SPEC_HANDLER(ZEND_OPCODE_HANDLER_ARGS
 	}
 }
 
-static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_CONST_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
-{
-	USE_OPLINE
-
-	SAVE_OPLINE();
-	EG(exception) = NULL;
-	if (IS_CONST == IS_UNUSED) {
-		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	} else {
-
-		zval *class_name = opline->op2.zv;
-
-		if (IS_CONST == IS_CONST) {
-			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
-				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
-			} else {
-				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
-				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
-			}
-		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
-			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
-		} else if (Z_TYPE_P(class_name) == IS_STRING) {
-			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
-		} else {
-			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
-		}
-
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	}
-}
-
 static int ZEND_FASTCALL  ZEND_INIT_FCALL_BY_NAME_SPEC_CONST_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	USE_OPLINE
@@ -1453,41 +1419,6 @@ static int ZEND_FASTCALL  ZEND_ADD_INTERFACE_SPEC_CONST_HANDLER(ZEND_OPCODE_HAND
 	ZEND_VM_NEXT_OPCODE();
 }
 
-static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_TMP_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
-{
-	USE_OPLINE
-
-	SAVE_OPLINE();
-	EG(exception) = NULL;
-	if (IS_TMP_VAR == IS_UNUSED) {
-		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	} else {
-		zend_free_op free_op2;
-		zval *class_name = _get_zval_ptr_tmp(opline->op2.var, EX_Ts(), &free_op2 TSRMLS_CC);
-
-		if (IS_TMP_VAR == IS_CONST) {
-			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
-				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
-			} else {
-				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
-				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
-			}
-		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
-			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
-		} else if (Z_TYPE_P(class_name) == IS_STRING) {
-			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
-		} else {
-			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
-		}
-
-		zval_dtor(free_op2.var);
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	}
-}
-
 static int ZEND_FASTCALL  ZEND_INIT_FCALL_BY_NAME_SPEC_TMP_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	USE_OPLINE
@@ -1617,41 +1548,6 @@ static int ZEND_FASTCALL  ZEND_INIT_FCALL_BY_NAME_SPEC_TMP_HANDLER(ZEND_OPCODE_H
 }
 
 
-static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_VAR_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
-{
-	USE_OPLINE
-
-	SAVE_OPLINE();
-	EG(exception) = NULL;
-	if (IS_VAR == IS_UNUSED) {
-		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	} else {
-		zend_free_op free_op2;
-		zval *class_name = _get_zval_ptr_var(opline->op2.var, EX_Ts(), &free_op2 TSRMLS_CC);
-
-		if (IS_VAR == IS_CONST) {
-			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
-				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
-			} else {
-				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
-				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
-			}
-		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
-			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
-		} else if (Z_TYPE_P(class_name) == IS_STRING) {
-			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
-		} else {
-			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
-		}
-
-		if (free_op2.var) {zval_ptr_dtor(&free_op2.var);};
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	}
-}
-
 static int ZEND_FASTCALL  ZEND_INIT_FCALL_BY_NAME_SPEC_VAR_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	USE_OPLINE
@@ -1780,74 +1676,6 @@ static int ZEND_FASTCALL  ZEND_INIT_FCALL_BY_NAME_SPEC_VAR_HANDLER(ZEND_OPCODE_H
 	}
 }
 
-
-static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_UNUSED_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
-{
-	USE_OPLINE
-
-	SAVE_OPLINE();
-	EG(exception) = NULL;
-	if (IS_UNUSED == IS_UNUSED) {
-		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	} else {
-
-		zval *class_name = NULL;
-
-		if (IS_UNUSED == IS_CONST) {
-			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
-				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
-			} else {
-				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
-				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
-			}
-		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
-			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
-		} else if (Z_TYPE_P(class_name) == IS_STRING) {
-			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
-		} else {
-			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
-		}
-
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	}
-}
-
-static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
-{
-	USE_OPLINE
-
-	SAVE_OPLINE();
-	EG(exception) = NULL;
-	if (IS_CV == IS_UNUSED) {
-		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	} else {
-
-		zval *class_name = _get_zval_ptr_cv_BP_VAR_R(EX_CVs(), opline->op2.var TSRMLS_CC);
-
-		if (IS_CV == IS_CONST) {
-			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
-				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
-			} else {
-				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
-				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
-			}
-		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
-			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
-		} else if (Z_TYPE_P(class_name) == IS_STRING) {
-			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
-		} else {
-			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
-		}
-
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
-	}
-}
 
 static int ZEND_FASTCALL  ZEND_INIT_FCALL_BY_NAME_SPEC_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
@@ -3428,6 +3256,59 @@ static int ZEND_FASTCALL  ZEND_FETCH_DIM_TMP_VAR_SPEC_CONST_CONST_HANDLER(ZEND_O
 	ZEND_VM_NEXT_OPCODE();
 }
 
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_CONST_CONST_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_CONST == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+
+		zval *class_name = opline->op2.zv;
+
+		if (IS_CONST == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+	}
+
+	if (IS_CONST != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_CONST);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_CONST == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = opline->op1.zv;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
+}
+
 static int ZEND_FASTCALL  ZEND_INIT_STATIC_METHOD_CALL_SPEC_CONST_CONST_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	USE_OPLINE
@@ -4260,6 +4141,60 @@ static int ZEND_FASTCALL  ZEND_FETCH_DIM_R_SPEC_CONST_TMP_HANDLER(ZEND_OPCODE_HA
 	ZEND_VM_NEXT_OPCODE();
 }
 
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_CONST_TMP_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_TMP_VAR == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+		zend_free_op free_op2;
+		zval *class_name = _get_zval_ptr_tmp(opline->op2.var, EX_Ts(), &free_op2 TSRMLS_CC);
+
+		if (IS_TMP_VAR == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+		zval_dtor(free_op2.var);
+	}
+
+	if (IS_CONST != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_CONST);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_CONST == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = opline->op1.zv;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
+}
+
 static int ZEND_FASTCALL  ZEND_INIT_STATIC_METHOD_CALL_SPEC_CONST_TMP_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	USE_OPLINE
@@ -4964,6 +4899,60 @@ static int ZEND_FASTCALL  ZEND_FETCH_DIM_R_SPEC_CONST_VAR_HANDLER(ZEND_OPCODE_HA
 	ZEND_VM_NEXT_OPCODE();
 }
 
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_CONST_VAR_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_VAR == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+		zend_free_op free_op2;
+		zval *class_name = _get_zval_ptr_var(opline->op2.var, EX_Ts(), &free_op2 TSRMLS_CC);
+
+		if (IS_VAR == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+		if (free_op2.var) {zval_ptr_dtor(&free_op2.var);};
+	}
+
+	if (IS_CONST != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_CONST);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_CONST == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = opline->op1.zv;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
+}
+
 static int ZEND_FASTCALL  ZEND_INIT_STATIC_METHOD_CALL_SPEC_CONST_VAR_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	USE_OPLINE
@@ -5521,6 +5510,59 @@ static int ZEND_FASTCALL  ZEND_FETCH_UNSET_SPEC_CONST_UNUSED_HANDLER(ZEND_OPCODE
 static int ZEND_FASTCALL  ZEND_FETCH_IS_SPEC_CONST_UNUSED_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	return zend_fetch_var_address_helper_SPEC_CONST_UNUSED(BP_VAR_IS, ZEND_OPCODE_HANDLER_ARGS_PASSTHRU);
+}
+
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_CONST_UNUSED_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_UNUSED == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+
+		zval *class_name = NULL;
+
+		if (IS_UNUSED == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+	}
+
+	if (IS_CONST != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_CONST);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_CONST == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = opline->op1.zv;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
 }
 
 static int ZEND_FASTCALL  ZEND_INIT_STATIC_METHOD_CALL_SPEC_CONST_UNUSED_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
@@ -6222,6 +6264,59 @@ static int ZEND_FASTCALL  ZEND_FETCH_DIM_R_SPEC_CONST_CV_HANDLER(ZEND_OPCODE_HAN
 
 	CHECK_EXCEPTION();
 	ZEND_VM_NEXT_OPCODE();
+}
+
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_CONST_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_CV == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+
+		zval *class_name = _get_zval_ptr_cv_BP_VAR_R(EX_CVs(), opline->op2.var TSRMLS_CC);
+
+		if (IS_CV == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+	}
+
+	if (IS_CONST != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_CONST);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_CONST == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = opline->op1.zv;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
 }
 
 static int ZEND_FASTCALL  ZEND_INIT_STATIC_METHOD_CALL_SPEC_CONST_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
@@ -22585,6 +22680,59 @@ static int ZEND_FASTCALL  ZEND_ADD_STRING_SPEC_UNUSED_CONST_HANDLER(ZEND_OPCODE_
 	ZEND_VM_NEXT_OPCODE();
 }
 
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_UNUSED_CONST_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_CONST == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+
+		zval *class_name = opline->op2.zv;
+
+		if (IS_CONST == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+	}
+
+	if (IS_UNUSED != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_UNUSED);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_UNUSED == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = NULL;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
+}
+
 static int ZEND_FASTCALL  ZEND_INIT_METHOD_CALL_SPEC_UNUSED_CONST_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	USE_OPLINE
@@ -23835,6 +23983,60 @@ static int ZEND_FASTCALL  ZEND_ADD_VAR_SPEC_UNUSED_TMP_HANDLER(ZEND_OPCODE_HANDL
 	ZEND_VM_NEXT_OPCODE();
 }
 
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_UNUSED_TMP_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_TMP_VAR == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+		zend_free_op free_op2;
+		zval *class_name = _get_zval_ptr_tmp(opline->op2.var, EX_Ts(), &free_op2 TSRMLS_CC);
+
+		if (IS_TMP_VAR == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+		zval_dtor(free_op2.var);
+	}
+
+	if (IS_UNUSED != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_UNUSED);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_UNUSED == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = NULL;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
+}
+
 static int ZEND_FASTCALL  ZEND_INIT_METHOD_CALL_SPEC_UNUSED_TMP_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	USE_OPLINE
@@ -24994,6 +25196,60 @@ static int ZEND_FASTCALL  ZEND_ADD_VAR_SPEC_UNUSED_VAR_HANDLER(ZEND_OPCODE_HANDL
 	ZEND_VM_NEXT_OPCODE();
 }
 
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_UNUSED_VAR_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_VAR == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+		zend_free_op free_op2;
+		zval *class_name = _get_zval_ptr_var(opline->op2.var, EX_Ts(), &free_op2 TSRMLS_CC);
+
+		if (IS_VAR == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+		if (free_op2.var) {zval_ptr_dtor(&free_op2.var);};
+	}
+
+	if (IS_UNUSED != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_UNUSED);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_UNUSED == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = NULL;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
+}
+
 static int ZEND_FASTCALL  ZEND_INIT_METHOD_CALL_SPEC_UNUSED_VAR_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	USE_OPLINE
@@ -25623,6 +25879,59 @@ static int ZEND_FASTCALL  ZEND_ASSIGN_BW_AND_SPEC_UNUSED_UNUSED_HANDLER(ZEND_OPC
 static int ZEND_FASTCALL  ZEND_ASSIGN_BW_XOR_SPEC_UNUSED_UNUSED_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
 {
 	return zend_binary_assign_op_helper_SPEC_UNUSED_UNUSED(bitwise_xor_function, ZEND_OPCODE_HANDLER_ARGS_PASSTHRU);
+}
+
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_UNUSED_UNUSED_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_UNUSED == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+
+		zval *class_name = NULL;
+
+		if (IS_UNUSED == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+	}
+
+	if (IS_UNUSED != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_UNUSED);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_UNUSED == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = NULL;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
 }
 
 static int ZEND_FASTCALL  ZEND_INIT_ARRAY_SPEC_UNUSED_UNUSED_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
@@ -26418,6 +26727,59 @@ static int ZEND_FASTCALL  ZEND_ADD_VAR_SPEC_UNUSED_CV_HANDLER(ZEND_OPCODE_HANDLE
 
 	CHECK_EXCEPTION();
 	ZEND_VM_NEXT_OPCODE();
+}
+
+static int ZEND_FASTCALL  ZEND_FETCH_CLASS_SPEC_UNUSED_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
+{
+	USE_OPLINE
+
+	SAVE_OPLINE();
+	EG(exception) = NULL;
+	if (IS_CV == IS_UNUSED) {
+		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
+	} else {
+
+		zval *class_name = _get_zval_ptr_cv_BP_VAR_R(EX_CVs(), opline->op2.var TSRMLS_CC);
+
+		if (IS_CV == IS_CONST) {
+			if (CACHED_PTR(opline->op2.literal->cache_slot)) {
+				EX_T(opline->result.var).class_entry = CACHED_PTR(opline->op2.literal->cache_slot);
+			} else {
+				EX_T(opline->result.var).class_entry = zend_fetch_class_by_name(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->op2.literal + 1, opline->extended_value TSRMLS_CC);
+				CACHE_PTR(opline->op2.literal->cache_slot, EX_T(opline->result.var).class_entry);
+			}
+		} else if (Z_TYPE_P(class_name) == IS_OBJECT) {
+			EX_T(opline->result.var).class_entry = Z_OBJCE_P(class_name);
+		} else if (Z_TYPE_P(class_name) == IS_STRING) {
+			EX_T(opline->result.var).class_entry = zend_fetch_class(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name), opline->extended_value TSRMLS_CC);
+		} else {
+			zend_error_noreturn(E_ERROR, "Class name must be a valid object or a string");
+		}
+
+	}
+
+	if (IS_UNUSED != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", IS_UNUSED);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (IS_UNUSED == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+
+			zval *class_name = NULL;
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
 }
 
 static int ZEND_FASTCALL  ZEND_INIT_METHOD_CALL_SPEC_UNUSED_CV_HANDLER(ZEND_OPCODE_HANDLER_ARGS)
@@ -39544,31 +39906,31 @@ void zend_init_opcodes_handlers(void)
   	ZEND_THROW_SPEC_CV_HANDLER,
   	ZEND_THROW_SPEC_CV_HANDLER,
   	ZEND_THROW_SPEC_CV_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CONST_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_TMP_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_VAR_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_UNUSED_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CV_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CONST_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_TMP_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_VAR_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_UNUSED_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CV_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CONST_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_TMP_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_VAR_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_UNUSED_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CV_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CONST_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_TMP_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_VAR_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_UNUSED_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CV_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CONST_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_TMP_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_VAR_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_UNUSED_HANDLER,
-  	ZEND_FETCH_CLASS_SPEC_CV_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_CONST_CONST_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_CONST_TMP_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_CONST_VAR_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_CONST_UNUSED_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_CONST_CV_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_UNUSED_CONST_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_UNUSED_TMP_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_UNUSED_VAR_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_UNUSED_UNUSED_HANDLER,
+  	ZEND_FETCH_CLASS_SPEC_UNUSED_CV_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
+  	ZEND_NULL_HANDLER,
   	ZEND_CLONE_SPEC_CONST_HANDLER,
   	ZEND_CLONE_SPEC_CONST_HANDLER,
   	ZEND_CLONE_SPEC_CONST_HANDLER,

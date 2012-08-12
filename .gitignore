@@ -99,9 +99,9 @@ Zend/zend_config.h
 Zend/zend_ini_parser.c
 Zend/zend_ini_parser.h
 Zend/zend_ini_parser.output
-Zend/zend_language_parser.c
-Zend/zend_language_parser.h
-Zend/zend_language_parser.output
+# Zend/zend_language_parser.c
+# Zend/zend_language_parser.h
+# Zend/zend_language_parser.output
 ext/date/lib/timelib_config.h
 ext/iconv/php_iconv_aliased_libiconv.h
 ext/phar/phar.php

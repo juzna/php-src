@@ -2128,7 +2128,7 @@ ZEND_VM_HANDLER(56, ZEND_ADD_VAR, TMP|UNUSED, TMP|VAR|CV)
 	ZEND_VM_NEXT_OPCODE();
 }
 
-ZEND_VM_HANDLER(109, ZEND_FETCH_CLASS, ANY, CONST|TMP|VAR|UNUSED|CV)
+ZEND_VM_HANDLER(109, ZEND_FETCH_CLASS, UNUSED|CONST, CONST|TMP|VAR|UNUSED|CV)
 {
 	USE_OPLINE
 
@@ -2136,8 +2136,6 @@ ZEND_VM_HANDLER(109, ZEND_FETCH_CLASS, ANY, CONST|TMP|VAR|UNUSED|CV)
 	EG(exception) = NULL;
 	if (OP2_TYPE == IS_UNUSED) {
 		EX_T(opline->result.var).class_entry = zend_fetch_class(NULL, 0, opline->extended_value TSRMLS_CC);
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
 	} else {
 		zend_free_op free_op2;
 		zval *class_name = GET_OP2_ZVAL_PTR(BP_VAR_R);
@@ -2158,9 +2156,30 @@ ZEND_VM_HANDLER(109, ZEND_FETCH_CLASS, ANY, CONST|TMP|VAR|UNUSED|CV)
 		}
 
 		FREE_OP2();
-		CHECK_EXCEPTION();
-		ZEND_VM_NEXT_OPCODE();
 	}
+
+	if (OP1_TYPE != IS_UNUSED) { // Generics
+		printf("ZEND_FETCH_CLASS op1_type = %d\n", OP1_TYPE);
+
+		zend_class_entry *ce = EX_T(opline->result.var).class_entry;
+
+		// alloc tmp for the fi
+		if (OP1_TYPE == IS_CONST && ce->tmpTypeValues != NULL) {
+//			ce->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+			zend_free_op free_op1;
+			zval *class_name = GET_OP1_ZVAL_PTR(BP_VAR_R);
+
+			char *_tmp = estrndup(Z_STRVAL_P(class_name), Z_STRLEN_P(class_name));
+			printf("Got generic value %s for %s\n", _tmp, ce->typeArguments[0]);
+			ce->tmpTypeValues[0] = _tmp;
+		}
+
+	}
+
+
+	CHECK_EXCEPTION();
+	ZEND_VM_NEXT_OPCODE();
+
 }
 
 ZEND_VM_HANDLER(112, ZEND_INIT_METHOD_CALL, TMP|VAR|UNUSED|CV, CONST|TMP|VAR|CV)

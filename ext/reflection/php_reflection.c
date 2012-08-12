@@ -2402,6 +2402,12 @@ ZEND_METHOD(reflection_parameter, getClass)
 		 * TODO: Think about moving these checks to the compiler or some sort of
 		 * lint-mode.
 		 */
+		 if (param->fptr->common.scope->typeArguments &&
+		    zend_binary_strcasecmp(param->arg_info->class_name, param->arg_info->class_name_len,
+		        param->fptr->common.scope->typeArguments[0], strlen(param->fptr->common.scope->typeArguments[0])) == 0) {
+					RETURN_NULL();
+        }
+
 		if (0 == zend_binary_strcasecmp(param->arg_info->class_name, param->arg_info->class_name_len, "self", sizeof("self")- 1)) {
 			ce = param->fptr->common.scope;
 			if (!ce) {
@@ -2430,6 +2436,41 @@ ZEND_METHOD(reflection_parameter, getClass)
 		}
 		zend_reflection_class_factory(*pce, return_value TSRMLS_CC);
 	}
+}
+/* }}} */
+
+/* {{{ proto public bool ReflectionParameter::getParametrizedTypeForObject(object $obj)
+   Returns parametrized type */
+ZEND_METHOD(reflection_parameter, getParametrizedTypeForObject)
+{
+	reflection_object *intern;
+	parameter_reference *param;
+	zend_class_entry **pce;
+	zval *object;
+	char **type_values, *resolved_class_name;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &object) == FAILURE) {
+		return;
+	}
+
+	GET_REFLECTION_OBJECT_PTR(param);
+
+	if (param->arg_info->class_name &&
+		param->fptr->common.scope->typeArguments &&
+        zend_binary_strcasecmp(param->arg_info->class_name, param->arg_info->class_name_len,
+	        param->fptr->common.scope->typeArguments[0], strlen(param->fptr->common.scope->typeArguments[0]))
+         == 0
+     ) {
+		type_values = zend_get_class_type_values(object);
+        resolved_class_name = type_values[0];
+
+		if (zend_lookup_class(resolved_class_name, strlen(resolved_class_name), &pce TSRMLS_CC) == FAILURE) {
+			zend_throw_exception_ex(reflection_exception_ptr, 0 TSRMLS_CC,
+				"Class %s does not exist", resolved_class_name);
+			return;
+		}
+		zend_reflection_class_factory(*pce, return_value TSRMLS_CC);
+     }
 }
 /* }}} */
 
@@ -3519,6 +3560,54 @@ ZEND_METHOD(reflection_class, getName)
 		return;
 	}
 	_default_get_entry(getThis(), "name", sizeof("name"), return_value TSRMLS_CC);
+}
+/* }}} */
+
+/* {{{ proto public string ReflectionClass::getParametrizedType()
+   Returns the class' name */
+ZEND_METHOD(reflection_class, getParametrizedType)
+{
+	reflection_object *intern;
+	zend_class_entry *ce;
+
+	if (zend_parse_parameters_none() == FAILURE) {
+		return;
+	}
+
+	GET_REFLECTION_OBJECT_PTR(ce);
+
+	if (ce->typeArguments == NULL) {
+		RETURN_BOOL(0);
+	}
+
+	RETURN_STRING(ce->typeArguments[0], 1);
+}
+/* }}} */
+
+/* {{{ proto public string ReflectionClass::getParametrizedTypeForObject($obj)
+   Returns the class' name */
+ZEND_METHOD(reflection_class, getParametrizedTypeForObject)
+{
+	reflection_object *intern;
+	zend_class_entry *ce;
+	zval *object;
+	char **type_values;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "o", &object) == FAILURE) {
+		return;
+	}
+
+	GET_REFLECTION_OBJECT_PTR(ce);
+
+	type_values = zend_get_class_type_values(object);
+
+	if (ce->typeArguments == NULL) {
+		RETURN_BOOL(0);
+	}
+
+	array_init(return_value);
+	add_assoc_string(return_value, ce->typeArguments[0], type_values[0], 1);
+//	RETURN_STRING(ce->typeArguments[0], 1);
 }
 /* }}} */
 
@@ -5850,12 +5939,19 @@ ZEND_BEGIN_ARG_INFO(arginfo_reflection_class_implementsInterface, 0)
 	ZEND_ARG_INFO(0, interface)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(arginfo_reflection_class_getParametrizedTypeForObject, 0)
+	ZEND_ARG_INFO(0, object)
+ZEND_END_ARG_INFO()
+
+
 static const zend_function_entry reflection_class_functions[] = {
 	ZEND_ME(reflection, __clone, arginfo_reflection__void, ZEND_ACC_PRIVATE|ZEND_ACC_FINAL)
 	ZEND_ME(reflection_class, export, arginfo_reflection_class_export, ZEND_ACC_STATIC|ZEND_ACC_PUBLIC)
 	ZEND_ME(reflection_class, __construct, arginfo_reflection_class___construct, 0)
 	ZEND_ME(reflection_class, __toString, arginfo_reflection__void, 0)
 	ZEND_ME(reflection_class, getName, arginfo_reflection__void, 0)
+	ZEND_ME(reflection_class, getParametrizedType, arginfo_reflection__void, 0)
+	ZEND_ME(reflection_class, getParametrizedTypeForObject, arginfo_reflection_class_getParametrizedTypeForObject, 0)
 	ZEND_ME(reflection_class, isInternal, arginfo_reflection__void, 0)
 	ZEND_ME(reflection_class, isUserDefined, arginfo_reflection__void, 0)
 	ZEND_ME(reflection_class, isInstantiable, arginfo_reflection__void, 0)
@@ -5976,6 +6072,10 @@ ZEND_BEGIN_ARG_INFO(arginfo_reflection_parameter___construct, 0)
 	ZEND_ARG_INFO(0, parameter)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO(arginfo_reflection_parameter_getParametrizedTypeForObject, 0)
+	ZEND_ARG_INFO(0, object)
+ZEND_END_ARG_INFO()
+
 static const zend_function_entry reflection_parameter_functions[] = {
 	ZEND_ME(reflection, __clone, arginfo_reflection__void, ZEND_ACC_PRIVATE|ZEND_ACC_FINAL)
 	ZEND_ME(reflection_parameter, export, arginfo_reflection_parameter_export, ZEND_ACC_STATIC|ZEND_ACC_PUBLIC)
@@ -5987,6 +6087,7 @@ static const zend_function_entry reflection_parameter_functions[] = {
 	ZEND_ME(reflection_parameter, getDeclaringFunction, arginfo_reflection__void, 0)
 	ZEND_ME(reflection_parameter, getDeclaringClass, arginfo_reflection__void, 0)
 	ZEND_ME(reflection_parameter, getClass, arginfo_reflection__void, 0)
+	ZEND_ME(reflection_parameter, getParametrizedTypeForObject, arginfo_reflection_parameter_getParametrizedTypeForObject, 0)
 	ZEND_ME(reflection_parameter, isArray, arginfo_reflection__void, 0)
 	ZEND_ME(reflection_parameter, isCallable, arginfo_reflection__void, 0)
 	ZEND_ME(reflection_parameter, allowsNull, arginfo_reflection__void, 0)

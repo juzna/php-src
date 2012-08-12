@@ -243,6 +243,17 @@ ZEND_API zend_class_entry *zend_get_class_entry(const zval *zobject TSRMLS_DC) /
 }
 /* }}} */
 
+ZEND_API char **zend_get_class_type_values(const zval *zobject TSRMLS_DC) /* {{{ */
+{
+	if (Z_OBJ_HT_P(zobject)->get_type_values) {
+		return Z_OBJ_HT_P(zobject)->get_type_values(zobject TSRMLS_CC);
+	} else {
+		zend_error(E_ERROR, "Class entry requested for an object without PHP class");
+		return NULL;
+	}
+}
+/* }}} */
+
 /* returns 1 if you need to copy result, 0 if it's already a copy */
 ZEND_API int zend_get_object_classname(const zval *object, const char **class_name, zend_uint *class_name_len TSRMLS_DC) /* {{{ */
 {
@@ -1134,7 +1145,14 @@ ZEND_API int _object_and_properties_init(zval *arg, zend_class_entry *class_type
 		}
 	} else {
 		Z_OBJVAL_P(arg) = class_type->create_object(class_type TSRMLS_CC);
+		object = NULL;
 	}
+
+	if (object && class_type->typeArguments != NULL) {
+		object->typeValues = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+		object->typeValues[0] = estrdup(class_type->tmpTypeValues[0]);
+	}
+
 	return SUCCESS;
 }
 /* }}} */

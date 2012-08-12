@@ -98,6 +98,7 @@ typedef void (*zend_object_delete_obj_t)(zval *object TSRMLS_DC);
 typedef zend_object_value (*zend_object_clone_obj_t)(zval *object TSRMLS_DC);
 
 typedef zend_class_entry *(*zend_object_get_class_entry_t)(const zval *object TSRMLS_DC);
+typedef char** (*zend_object_get_type_values_t)(const zval *object TSRMLS_DC);
 typedef int (*zend_object_get_class_name_t)(const zval *object, const char **class_name, zend_uint *class_name_len, int parent TSRMLS_DC);
 typedef int (*zend_object_compare_t)(zval *object1, zval *object2 TSRMLS_DC);
 
@@ -142,6 +143,7 @@ struct _zend_object_handlers {
 	zend_object_get_debug_info_t			get_debug_info;
 	zend_object_get_closure_t				get_closure;
 	zend_object_get_gc_t					get_gc;
+	zend_object_get_type_values_t			get_type_values;
 };
 
 extern ZEND_API zend_object_handlers std_object_handlers;

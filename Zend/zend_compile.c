@@ -722,7 +722,7 @@ void zend_do_fetch_static_member(znode *result, znode *class_name TSRMLS_DC) /* 
 		zend_resolve_class_name(class_name, ZEND_FETCH_CLASS_GLOBAL, 1 TSRMLS_CC);
 		class_node = *class_name;
 	} else {
-		zend_do_fetch_class(&class_node, class_name TSRMLS_CC);
+		zend_do_fetch_class(&class_node, class_name, NULL TSRMLS_CC);
 	}
 	zend_stack_top(&CG(bp_stack), (void **) &fetch_list_ptr);
 	if (result->op_type == IS_CV) {
@@ -1899,8 +1899,23 @@ void zend_do_receive_arg(zend_uchar op, znode *varname, const znode *offset, con
 					}
 				}
 			} else {
-				cur_arg_info->type_hint = IS_OBJECT;
-				if (ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_type->u.constant), Z_STRLEN(class_type->u.constant))) {
+				zend_bool do_resolve;
+
+				// generic variable; we're in a class definition which has typeArgument
+				if (
+					CG(active_class_entry) != NULL && CG(active_class_entry)->typeArguments != NULL &&
+					Z_TYPE(class_type->u.constant) == IS_STRING &&
+					!strcasecmp(Z_STRVAL(class_type->u.constant), CG(active_class_entry)->typeArguments[0])
+				) {
+					cur_arg_info->type_hint = IS_TYPE_ARG;
+					printf("Generic type arg %s\n", Z_STRVAL(class_type->u.constant));
+					do_resolve = 0;
+				} else {
+					cur_arg_info->type_hint = IS_OBJECT;
+					do_resolve = 1;
+				}
+
+				if (do_resolve && ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(class_type->u.constant), Z_STRLEN(class_type->u.constant))) {
 					zend_resolve_class_name(class_type, opline->extended_value, 1 TSRMLS_CC);
 				}
 				Z_STRVAL(class_type->u.constant) = (char*)zend_new_interned_string(class_type->u.constant.value.str.val, class_type->u.constant.value.str.len + 1, 1 TSRMLS_CC);
@@ -2176,7 +2191,7 @@ void zend_resolve_class_name(znode *class_name, ulong fetch_type, int check_ns_n
 }
 /* }}} */
 
-void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ */
+void zend_do_fetch_class(znode *result, znode *class_name, const znode *generic TSRMLS_DC) /* {{{ */
 {
 	long fetch_class_op_number;
 	zend_op *opline;
@@ -2194,7 +2209,7 @@ void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ */
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 
 	opline->opcode = ZEND_FETCH_CLASS;
-	SET_UNUSED(opline->op1);
+	// SET_UNUSED(opline->op1);
 	opline->extended_value = ZEND_FETCH_CLASS_GLOBAL;
 	CG(catch_begin) = fetch_class_op_number;
 	if (class_name->op_type == IS_CONST) {
@@ -2219,6 +2234,12 @@ void zend_do_fetch_class(znode *result, znode *class_name TSRMLS_DC) /* {{{ */
 	} else {
 		SET_NODE(opline->op2, class_name);
 	}
+
+	// Generic to op1
+	if (generic && generic->op_type != IS_UNUSED) {
+		SET_NODE(opline->op1, generic);
+	}
+
 	opline->result.var = get_temporary_variable(CG(active_op_array));
 	opline->result_type = IS_VAR; /* FIXME: Hack so that INIT_FCALL_BY_NAME still knows this is a class */
 	GET_NODE(result, opline->result);
@@ -2389,7 +2410,7 @@ int zend_do_begin_class_member_function_call(znode *class_name, znode *method_na
 		class_node = *class_name;
 		opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	} else {
-		zend_do_fetch_class(&class_node, class_name TSRMLS_CC);
+		zend_do_fetch_class(&class_node, class_name, NULL TSRMLS_CC);
 		opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 		opline->extended_value = class_node.EA	;
 	}
@@ -4924,7 +4945,7 @@ void zend_do_default_before_statement(const znode *case_list, znode *default_tok
 }
 /* }}} */
 
-void zend_do_begin_class_declaration(const znode *class_token, znode *class_name, const znode *parent_class_name TSRMLS_DC) /* {{{ */
+void zend_do_begin_class_declaration(const znode *class_token, znode *class_name, const znode *generic, const znode *parent_class_name TSRMLS_DC) /* {{{ */
 {
 	zend_op *opline;
 	int doing_inheritance = 0;
@@ -4999,6 +5020,16 @@ void zend_do_begin_class_declaration(const znode *class_token, znode *class_name
 		}
 		doing_inheritance = 1;
 	}
+
+	if (generic && generic->op_type != IS_UNUSED) {
+		new_class_entry->typeArguments = (char**) emalloc(4 * sizeof(char*)); // so far just one pointer
+		new_class_entry->tmpTypeValues = (char**) emalloc(4 * sizeof(char*)); // space for temp values
+
+		char *_tmp = estrndup(generic->u.constant.value.str.val, generic->u.constant.value.str.len);
+//		printf("Got generic %s\n", _tmp);
+		new_class_entry->typeArguments[0] = _tmp;
+	}
+
 
 	opline = get_next_op(CG(active_op_array) TSRMLS_CC);
 	opline->op1_type = IS_CONST;
@@ -5540,7 +5571,7 @@ void zend_do_fetch_constant(znode *result, znode *constant_container, znode *con
 				ZEND_FETCH_CLASS_DEFAULT == zend_get_class_fetch_type(Z_STRVAL(constant_container->u.constant), Z_STRLEN(constant_container->u.constant))) {
 					zend_resolve_class_name(constant_container, fetch_type, 1 TSRMLS_CC);
 				} else {
-					zend_do_fetch_class(&tmp, constant_container TSRMLS_CC);
+					zend_do_fetch_class(&tmp, constant_container, NULL TSRMLS_CC);
 					constant_container = &tmp;
 				}
 				opline = get_next_op(CG(active_op_array) TSRMLS_CC);
@@ -6783,6 +6814,8 @@ ZEND_API void zend_initialize_class_data(zend_class_entry *ce, zend_bool nullify
 		ce->interface_gets_implemented = NULL;
 		ce->get_static_method = NULL;
 		ce->parent = NULL;
+		ce->typeArguments = NULL; // TODO: clean on destruction
+		ce->tmpTypeValues = NULL;
 		ce->num_interfaces = 0;
 		ce->interfaces = NULL;
 		ce->num_traits = 0;

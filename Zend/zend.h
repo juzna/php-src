@@ -310,6 +310,7 @@ typedef struct _zend_guard {
 
 typedef struct _zend_object {
 	zend_class_entry *ce;
+	char **typeValues;
 	HashTable *properties;
 	zval **properties_table;
 	HashTable *guards; /* protects from __get/__set ... recursion */
@@ -477,6 +478,8 @@ struct _zend_class_entry {
 	const char *name;
 	zend_uint name_length;
 	struct _zend_class_entry *parent;
+	char **typeArguments; // now just one
+	char **tmpTypeValues; // just temporal
 	int refcount;
 	zend_uint ce_flags;
 
@@ -587,6 +590,7 @@ typedef int (*zend_write_func_t)(const char *str, uint str_length);
 #define IS_CONSTANT	8
 #define IS_CONSTANT_ARRAY	9
 #define IS_CALLABLE	10
+#define IS_TYPE_ARG	11
 
 /* Ugly hack to support constants as static array indices */
 #define IS_CONSTANT_TYPE_MASK		0x00f

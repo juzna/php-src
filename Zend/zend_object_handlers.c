@@ -1455,6 +1455,15 @@ zend_class_entry *zend_std_object_get_class(const zval *object TSRMLS_DC) /* {{{
 }
 /* }}} */
 
+char **zend_std_object_get_type_values(const zval *object TSRMLS_DC) /* {{{ */
+{
+	zend_object *zobj;
+	zobj = Z_OBJ_P(object);
+
+	return zobj->typeValues;
+}
+/* }}} */
+
 int zend_std_object_get_class_name(const zval *object, const char **class_name, zend_uint *class_name_len, int parent TSRMLS_DC) /* {{{ */
 {
 	zend_object *zobj;
@@ -1601,6 +1610,7 @@ ZEND_API zend_object_handlers std_object_handlers = {
 	NULL,									/* get_debug_info */
 	zend_std_get_closure,					/* get_closure */
 	zend_std_get_gc,						/* get_gc */
+	zend_std_object_get_type_values,		/* get_type_values */
 };
 
 /*

@@ -50,7 +50,7 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 %}
 
 %pure_parser
-%expect 3
+%expect 4
 
 %token END 0 "end of file"
 %left T_INCLUDE T_INCLUDE_ONCE T_EVAL T_REQUIRE T_REQUIRE_ONCE
@@ -370,18 +370,32 @@ unticked_function_declaration_statement:
 ;
 
 unticked_class_declaration_statement:
-		class_entry_type T_STRING extends_from
-			{ zend_do_begin_class_declaration(&$1, &$2, &$3 TSRMLS_CC); }
+		class_entry_type T_STRING optional_generics extends_from
+			{ zend_do_begin_class_declaration(&$1, &$2, &$3, &$4 TSRMLS_CC); }
 			implements_list
 			'{'
 				class_statement_list
 			'}' { zend_do_end_class_declaration(&$1, &$2 TSRMLS_CC); }
-	|	interface_entry T_STRING
-			{ zend_do_begin_class_declaration(&$1, &$2, NULL TSRMLS_CC); }
+	|	interface_entry T_STRING optional_generics
+			{ zend_do_begin_class_declaration(&$1, &$2, &$3, NULL TSRMLS_CC); }
 			interface_extends_list
 			'{'
 				class_statement_list
 			'}' { zend_do_end_class_declaration(&$1, &$2 TSRMLS_CC); }
+;
+
+optional_generics:
+		/* empty */					{ $$.op_type = IS_UNUSED; }
+	|   generics                    { $$ = $1; }
+;
+
+generics:
+	'<' generics_list '>'         { $$ = $2; }
+;
+
+generics_list:
+		T_STRING                    { $$ = $1; }
+	|   generics_list ',' T_STRING  { $$ = $3; }
 ;
 
 
@@ -394,7 +408,7 @@ class_entry_type:
 
 extends_from:
 		/* empty */					{ $$.op_type = IS_UNUSED; }
-	|	T_EXTENDS fully_qualified_class_name	{ zend_do_fetch_class(&$$, &$2 TSRMLS_CC); }
+	|	T_EXTENDS fully_qualified_class_name	{ zend_do_fetch_class(&$$, &$2, NULL TSRMLS_CC); }
 ;
 
 interface_entry:
@@ -525,7 +539,7 @@ optional_class_type:
 		/* empty */					{ $$.op_type = IS_UNUSED; }
 	|	T_ARRAY						{ $$.op_type = IS_CONST; Z_TYPE($$.u.constant)=IS_ARRAY; }
 	|	T_CALLABLE					{ $$.op_type = IS_CONST; Z_TYPE($$.u.constant)=IS_CALLABLE; }
-	|	fully_qualified_class_name			{ $$ = $1; }
+	|	fully_qualified_class_name optional_generics			{ $$ = $1; }
 ;
 
 
@@ -578,6 +592,8 @@ class_statement:
 	|	trait_use_statement
 	|	method_modifiers function is_reference T_STRING { zend_do_begin_function_declaration(&$2, &$4, 1, $3.op_type, &$1 TSRMLS_CC); } '('
 			parameter_list ')' method_body { zend_do_abstract_method(&$4, &$1, &$9 TSRMLS_CC); zend_do_end_function_declaration(&$2 TSRMLS_CC); }
+	|	method_modifiers function is_reference class_name T_STRING { zend_do_begin_function_declaration(&$2, &$5, 1, $3.op_type, &$1 TSRMLS_CC); } '('
+			parameter_list ')' method_body { zend_do_abstract_method(&$5, &$1, &$10 TSRMLS_CC); zend_do_end_function_declaration(&$2 TSRMLS_CC); }
 ;
 
 trait_use_statement:
@@ -717,7 +733,8 @@ instance_call:
 ;
 
 new_expr:
-		T_NEW class_name_reference { zend_do_extended_fcall_begin(TSRMLS_C); zend_do_begin_new_object(&$1, &$2 TSRMLS_CC); } ctor_arguments { zend_do_end_new_object(&$$, &$1, &$4 TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C);}
+		T_NEW class_name_reference { zend_do_extended_fcall_begin(TSRMLS_C); zend_do_begin_new_object(&$1, &$2 TSRMLS_CC); }
+		ctor_arguments { zend_do_end_new_object(&$$, &$1, &$4 TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C);}
 ;
 
 expr_without_variable:
@@ -867,8 +884,8 @@ fully_qualified_class_name:
 
 
 class_name_reference:
-		class_name						{ zend_do_fetch_class(&$$, &$1 TSRMLS_CC); }
-	|	dynamic_class_name_reference	{ zend_do_end_variable_parse(&$1, BP_VAR_R, 0 TSRMLS_CC); zend_do_fetch_class(&$$, &$1 TSRMLS_CC); }
+		class_name optional_generics	{ zend_do_fetch_class(&$$, &$1, &$2 TSRMLS_CC); }
+	|	dynamic_class_name_reference	{ zend_do_end_variable_parse(&$1, BP_VAR_R, 0 TSRMLS_CC); zend_do_fetch_class(&$$, &$1, NULL TSRMLS_CC); }
 ;
 
 
